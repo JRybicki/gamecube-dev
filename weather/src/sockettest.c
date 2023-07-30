@@ -16,12 +16,17 @@ void *httpd (void *arg);
 
 static	lwp_t httd_handle = (lwp_t)NULL;
 
+struct in_addr bba_localip;
+struct in_addr bba_netmask;
+struct in_addr bba_gateway;
+
 //---------------------------------------------------------------------------------
 int main(int argc, char **argv) {
 //---------------------------------------------------------------------------------
 	s32 ret;
 
-	char localip[16] = {"192.168.86.235"};
+	//char localip[16] = {"192.168.86.235"};
+	char localip[16] = {0};
 	char gateway[16] = {0};
 	char netmask[16] = {0};
 	
@@ -31,7 +36,7 @@ int main(int argc, char **argv) {
 	printf("Configuring network ...\n");
 
 	// Configure the network interface
-	ret = if_config ( localip, netmask, gateway, FALSE, 20);
+	ret = if_config ( localip, netmask, gateway, TRUE);
 	if (ret>=0) {
 		printf ("network configured, ip: %s, gw: %s, mask %s\n", localip, gateway, netmask);
 
