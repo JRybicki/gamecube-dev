@@ -1,25 +1,18 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <malloc.h>
 #include <ogcsys.h>
 #include <gccore.h>
-#include <network.h>
-#include <debug.h>
-#include <errno.h>
 
+#include "display.h"
 #include "sockettest.h"
 
-static void *xfb = NULL;
-static GXRModeObj *rmode = NULL;
-
-void *initialise();
+void Initialise();
 
 //---------------------------------------------------------------------------------
 int main(int argc, char **argv) {
 //---------------------------------------------------------------------------------
 
-	xfb = initialise();
+	Initialise();
 
 	printf ("\Entered main\n");
 	printf("Configuring network ...\n");
@@ -39,9 +32,8 @@ int main(int argc, char **argv) {
 
 	return 0;
 }
-
 //---------------------------------------------------------------------------------
-void *initialise() {
+void Initialise() {
 //---------------------------------------------------------------------------------
 
 	void *framebuffer;
@@ -49,7 +41,7 @@ void *initialise() {
 	VIDEO_Init();
 	PAD_Init();
 	
-	rmode = VIDEO_GetPreferredMode(NULL);
+	GXRModeObj *rmode = VIDEO_GetPreferredMode(NULL);
 	framebuffer = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
 	console_init(framebuffer,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
 	
@@ -60,6 +52,5 @@ void *initialise() {
 	VIDEO_WaitVSync();
 	if(rmode->viTVMode&VI_NON_INTERLACE) VIDEO_WaitVSync();
 
-	return framebuffer;
-
+	BackgroundInit();
 }
