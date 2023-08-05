@@ -8,11 +8,7 @@
 #include <debug.h>
 #include <errno.h>
 
-static void *xfb = NULL;
-static GXRModeObj *rmode = NULL;
-
-void *initialise();
-void *httpd (void *arg);
+#include "sockettest.h"
 
 static	lwp_t httd_handle = (lwp_t)NULL;
 
@@ -21,7 +17,7 @@ struct in_addr bba_netmask;
 struct in_addr bba_gateway;
 
 //---------------------------------------------------------------------------------
-int main(int argc, char **argv) {
+int InitSocket() {
 //---------------------------------------------------------------------------------
 	s32 ret;
 
@@ -30,8 +26,6 @@ int main(int argc, char **argv) {
 	char gateway[16] = {0};
 	char netmask[16] = {0};
 	
-	xfb = initialise();
-
 	printf ("\nlibogc network demo\n");
 	printf("Configuring network ...\n");
 
@@ -42,24 +36,12 @@ int main(int argc, char **argv) {
 
 		LWP_CreateThread(	&httd_handle,	/* thread handle */ 
 							httpd,			/* code */ 
-							localip,		/* arg pointer for thread */
+							NULL,			/* arg pointer for thread */
 							NULL,			/* stack base */ 
-							16*1024,		/* stack size */
-							50				/* thread priority */ );
+							24*1024,		/* stack size */
+							40				/* thread priority */ );
 	} else {
 		printf ("network configuration failed!\n");
-	}
-
-	while(1) {
-
-		VIDEO_WaitVSync();
-		PAD_ScanPads();
-
-		int buttonsDown = PAD_ButtonsDown(0);
-		
-		if (buttonsDown & PAD_BUTTON_START) {
-			exit(0);
-		}
 	}
 
 	return 0;
@@ -81,7 +63,7 @@ const static char http_get_index[] = "GET / HTTP/1.1\r\n";
 void *httpd (void *arg) {
 //---------------------------------------------------------------------------------
 
-	int sock, csock;
+	s32 sock, csock;
 	int ret;
 	u32	clientlen;
 	struct sockaddr_in client;
@@ -92,6 +74,7 @@ void *httpd (void *arg) {
 	clientlen = sizeof(client);
 
 	sock = net_socket (AF_INET, SOCK_STREAM, IPPROTO_IP);
+	printf("Got net_socket %d!\n", sock);
 
 	if (sock == INVALID_SOCKET) {
       printf ("Cannot create a socket!\n");
@@ -120,13 +103,14 @@ void *httpd (void *arg) {
 				while(1) {
 	
 					csock = net_accept (sock, (struct sockaddr *) &client, &clientlen);
+					printf("Got socket %d!\n", csock);
 				
 					if ( csock < 0 ) {
 						printf("Error connecting socket %d!\n", csock);
 						while(1);
 					}
 
-					printf("Connecting port %d from %s\n", client.sin_port, inet_ntoa(client.sin_addr));
+					printf("Connecting port %d from %s\r\n", client.sin_port, inet_ntoa(client.sin_addr));
 					memset (temp, 0, 1026);
 					ret = net_recv (csock, temp, 1024, 0);
 					printf("Received %d bytes\n", ret);
@@ -146,28 +130,4 @@ void *httpd (void *arg) {
 		}
 	}
 	return NULL;
-}
-
-//---------------------------------------------------------------------------------
-void *initialise() {
-//---------------------------------------------------------------------------------
-
-	void *framebuffer;
-
-	VIDEO_Init();
-	PAD_Init();
-	
-	rmode = VIDEO_GetPreferredMode(NULL);
-	framebuffer = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
-	console_init(framebuffer,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
-	
-	VIDEO_Configure(rmode);
-	VIDEO_SetNextFramebuffer(framebuffer);
-	VIDEO_SetBlack(FALSE);
-	VIDEO_Flush();
-	VIDEO_WaitVSync();
-	if(rmode->viTVMode&VI_NON_INTERLACE) VIDEO_WaitVSync();
-
-	return framebuffer;
-
 }
