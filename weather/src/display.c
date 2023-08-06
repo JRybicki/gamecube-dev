@@ -6,34 +6,48 @@
 #include "display.h"
 #include "sockettest.h"
 
-GXRModeObj *vmode = NULL;
-u32* xfb = NULL;
+#include "textures_tpl.h"
+#include "textures.h"
 
-void InitTextures() {
-	
+GXRModeObj *vmode = NULL;
+u32* xfb[2] = {NULL, NULL};
+
+TPLFile imagesTPL;
+GXTexObj backgroundTexObj;
+GXTlutObj backgroundTlutObj;
+
+uiDrawObj_t* DrawContainer()
+{
+	uiDrawObj_t *event = calloc(1, sizeof(uiDrawObj_t));
+	event->type = EV_CONTAINER;
+	return event;
 }
 
-void DisplayInit() {
+void InitTextures() {
+	TPL_OpenTPLFromMemory(&imagesTPL, (void *)textures_tpl, textures_tpl_size);
+	TPL_GetTextureCI(&imagesTPL, background, &backgroundTexObj, &backgroundTlutObj, GX_TLUT0);
+	GX_InitTexObjUserData(&backgroundTexObj, &backgroundTlutObj);
+}
+
+void SetVideoMode() {
 	vmode = VIDEO_GetPreferredMode(NULL);
 	VIDEO_Configure(vmode);
 
-	xfb = (u32*)MEM_K0_TO_K1(SYS_AllocateFramebuffer(vmode));
-	console_init (xfb, 20, 64, vmode->fbWidth, vmode->xfbHeight, vmode->fbWidth * 2);
+	xfb[0] = (u32*)MEM_K0_TO_K1(SYS_AllocateFramebuffer(vmode));
+	xfb[1] = (u32*)MEM_K0_TO_K1(SYS_AllocateFramebuffer(vmode));
 
-	VIDEO_ClearFrameBuffer (vmode, xfb, COLOR_BLACK);
-	VIDEO_SetNextFramebuffer(xfb);
+	console_init (xfb[0], 20, 64, vmode->fbWidth, vmode->xfbHeight, vmode->fbWidth * 2);
+
+	VIDEO_ClearFrameBuffer (vmode, xfb[0], COLOR_BLACK);
+	VIDEO_ClearFrameBuffer (vmode, xfb[1], COLOR_BLACK);
+
+	VIDEO_SetNextFramebuffer(xfb[0]);
 	VIDEO_SetBlack (FALSE);
 	VIDEO_Flush();
 	VIDEO_WaitVSync ();
-	
-/* 	GXRModeObj *rmode = VIDEO_GetPreferredMode(NULL);
-	framebuffer = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
-	console_init(framebuffer,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
-	
-	VIDEO_Configure(rmode);
-	VIDEO_SetNextFramebuffer(framebuffer);
-	VIDEO_SetBlack(FALSE);
-	VIDEO_Flush();
-	VIDEO_WaitVSync();
-	if(rmode->viTVMode&VI_NON_INTERLACE) VIDEO_WaitVSync(); */
+}
+
+void DisplayInit() {
+
+	SetVideoMode();
 }

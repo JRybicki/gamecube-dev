@@ -19,6 +19,7 @@ TARGET		:=	$(notdir $(CURDIR))
 BUILD		:=	build
 SOURCES		:=	src
 DATA		:=	data  
+IMAGES      :=  images 
 INCLUDES	:=
 
 #---------------------------------------------------------------------------------
@@ -51,7 +52,8 @@ ifneq ($(BUILD),$(notdir $(CURDIR)))
 export OUTPUT	:=	$(CURDIR)/$(TARGET)
 
 export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
-					$(foreach dir,$(DATA),$(CURDIR)/$(dir))
+					$(foreach dir,$(DATA),$(CURDIR)/$(dir)) \
+					$(foreach dir,$(IMAGES),$(CURDIR)/$(dir))
 
 export DEPSDIR	:=	$(CURDIR)/$(BUILD)
 
@@ -63,6 +65,8 @@ CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 sFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
 SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.S)))
 BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))
+SCFFILES	:=	$(foreach dir,$(IMAGES),$(notdir $(wildcard $(dir)/*.scf)))
+TPLFILES	:=	$(SCFFILES:.scf=.tpl)
 
 #---------------------------------------------------------------------------------
 # use CXX for linking C++ projects, CC for standard C
@@ -73,10 +77,11 @@ else
 	export LD	:=	$(CXX)
 endif
 
-export OFILES	:=	$(addsuffix .o,$(BINFILES)) \
-					$(CPPFILES:.cpp=.o) $(CFILES:.c=.o) \
-					$(sFILES:.s=.o) $(SFILES:.S=.o)
+export OFILES	:=	$(addsuffix .o,$(BINFILES)) $(addsuffix .o,$(TPLFILES))
+export OFILES_SOURCES := $(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(sFILES:.s=.o) $(SFILES:.S=.o)
+export OFILES := $(OFILES_BIN) $(OFILES_SOURCES)
 
+export HFILES := $(addsuffix .h,$(subst .,_,$(BINFILES))) $(addsuffix .h,$(subst .,_,$(TPLFILES)))
 #---------------------------------------------------------------------------------
 # build a list of include paths
 #---------------------------------------------------------------------------------
@@ -110,23 +115,22 @@ clean:
 #---------------------------------------------------------------------------------
 else
 
-DEPENDS	:=	$(OFILES:.o=.d)
-
 #---------------------------------------------------------------------------------
 # main targets
 #---------------------------------------------------------------------------------
 $(OUTPUT).dol: $(OUTPUT).elf
 $(OUTPUT).elf: $(OFILES)
 
+$(OFILES_SOURCES) : $(HFILES)
+
 #---------------------------------------------------------------------------------
-# This rule links in binary data with the .jpg extension
-#---------------------------------------------------------------------------------
-%.jpg.o	:	%.jpg
+%.tpl.o	%_tpl.h :	%.tpl
 #---------------------------------------------------------------------------------
 	@echo $(notdir $<)
-	$(bin2o)
+	@$(bin2o)
 
--include $(DEPENDS)
+
+-include $(DEPSDIR)/*.d
 
 #---------------------------------------------------------------------------------
 endif
