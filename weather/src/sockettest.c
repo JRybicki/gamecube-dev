@@ -11,9 +11,7 @@ struct in_addr bba_localip;
 struct in_addr bba_netmask;
 struct in_addr bba_gateway;
 
-//---------------------------------------------------------------------------------
 int InitSocket() {
-//---------------------------------------------------------------------------------
 	s32 ret;
 
 	//char localip[16] = {"192.168.86.235"};
@@ -54,9 +52,7 @@ const static char indexdata[] = "<html> \
 const static char http_html_hdr[] = "Content-type: text/html\r\n\r\n";
 const static char http_get_index[] = "GET / HTTP/1.1\r\n";
 
-//---------------------------------------------------------------------------------
 void *httpd (void *arg) {
-//---------------------------------------------------------------------------------
 
 	s32 sock, csock;
 	int ret;
